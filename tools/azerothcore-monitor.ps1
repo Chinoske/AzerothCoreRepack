@@ -1672,21 +1672,20 @@ function Start-DbImportJob {
     "" | Out-File -FilePath $dbLog -Encoding UTF8
     $script:dbimportLogPos = 0L
 
-    $dbEsc  = $dbimport -replace "'", "''"
-    $cfgEsc = $dbCfg    -replace "'", "''"
-    $logEsc = $dbLog    -replace "'", "''"
-    $psCmd  = "`$ErrorActionPreference='SilentlyContinue'; & '$dbEsc' --config '$cfgEsc' 2>&1 | Out-File -FilePath '$logEsc' -Encoding UTF8 -Append"
+    # cmd /c redirige stdout+stderr al log a nivel OS (sin buffering de PowerShell).
+    # cmd hereda stdin de nuestro pipe -> dbimport recibe las respuestas 'yes'.
+    # cmd.exe solo sale cuando dbimport termina, por lo que HasExited es exacto.
     $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName               = "powershell.exe"
-    $psi.Arguments              = "-ExecutionPolicy Bypass -Command `"$psCmd`""
+    $psi.FileName               = "cmd.exe"
+    $psi.Arguments              = "/c `"$dbimport`" --config `"$dbCfg`" 1>`"$dbLog`" 2>&1"
     $psi.RedirectStandardInput  = $true
     $psi.UseShellExecute        = $false
     $psi.CreateNoWindow         = $true
     $p = New-Object System.Diagnostics.Process; $p.StartInfo = $psi
     $p.Start() | Out-Null
     $p.StandardInput.AutoFlush  = $true
-    # Pre-responder prompts de confirmacion (3 bases de datos)
-    for ($i = 0; $i -lt 10; $i++) { $p.StandardInput.WriteLine("yes") }
+    # Pre-responder los 3 prompts de confirmacion de bases de datos
+    for ($i = 0; $i -lt 5; $i++) { $p.StandardInput.WriteLine("yes") }
     $script:dbimportProc = $p
 }
 
