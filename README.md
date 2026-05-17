@@ -1,0 +1,96 @@
+# AzerothCore Repack — WotLK 3.3.5a
+
+Repack portable de [AzerothCore](https://github.com/azerothcore/azerothcore-wotlk) para Windows con todas las herramientas necesarias incluidas. No requiere instalaciones externas.
+
+---
+
+## Contenido
+
+| Carpeta | Descripción |
+|---------|-------------|
+| `server/` | Binarios compilados (authserver, worldserver, dbimport) y configs |
+| `mysql/` | MySQL 8.4 portable |
+| `cmake/` | CMake 4.3.2 portable |
+| `boost/` | Boost 1.87.0 portable |
+| `git/` | Git portable |
+| `source/` | Vacío — se llena al compilar |
+| `build/` | Vacío — se llena al compilar |
+| `tools/` | Monitor, scripts de gestión |
+
+---
+
+## Requisitos
+
+- Windows 10 / 11 (64-bit)
+- [Visual Studio 2022](https://visualstudio.microsoft.com/) con el módulo **Desarrollo para el escritorio con C++** *(solo necesario para compilar)*
+- Cliente de WoW **3.3.5a** *(lo provees tú)*
+
+---
+
+## Primeros pasos
+
+### 1. Clonar el repositorio
+
+```
+git clone https://github.com/Chinoske/AzerothCoreRepack.git
+```
+
+> **Requiere Git LFS.** Instálalo desde [git-lfs.com](https://git-lfs.com) y ejecuta `git lfs install` antes de clonar.
+
+---
+
+### 2. Abrir el Monitor
+
+Haz doble clic en **`Monitor.lnk`** en la raíz del repack.
+
+---
+
+### 3. Configuración inicial (primera vez)
+
+Sigue los pasos numerados dentro del Monitor:
+
+| Paso | Botón | Descripción |
+|------|-------|-------------|
+| — | **Actualizar** | Clona el código fuente y compila el servidor *(tarda 20-40 min)* |
+| 1 | **Limpiar Base de Datos** | Elimina las DBs anteriores |
+| 2 | **Importar Base de Datos** | Crea las 3 bases de datos del juego desde cero |
+| 3 | **Crear Cuenta de Juego** | Crea tu cuenta de administrador |
+| 4 | **Iniciar AuthServer** | Arranca el servidor de autenticación |
+| 5 | **Iniciar WorldServer** | Arranca el servidor del mundo |
+
+---
+
+### 4. Configurar el cliente WoW
+
+Edita el `realmlist.wtf` de tu cliente WoW (botón **Realmlist** en el Monitor) y ponlo en:
+
+```
+set realmlist 127.0.0.1
+```
+
+---
+
+## Uso diario
+
+Una vez configurado, solo necesitas:
+
+1. Doble clic en **`Monitor.lnk`**
+2. Clic en **Iniciar Todo**
+
+---
+
+## Extractores de mapas
+
+El servidor necesita los archivos de mapas de tu cliente WoW. En `tools/` encontrarás el script:
+
+- `extract-data.bat` — extrae automáticamente maps, vmaps y mmaps desde tu cliente WoW
+
+Copia tu carpeta de WoW 3.3.5a al equipo, ejecuta `extract-data.bat` y sigue las instrucciones.
+
+---
+
+## Notas
+
+- Las rutas se auto-configuran al lanzar el Monitor — el repack funciona desde cualquier carpeta o unidad.
+- `Monitor.vbs` está oculto intencionalmente; `Monitor.lnk` es el acceso directo a usar.
+- El repositorio usa **Git LFS** para los binarios y herramientas portables (~3.2 GB).
