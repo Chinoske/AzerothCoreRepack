@@ -53,10 +53,10 @@ Sigue los pasos numerados dentro del Monitor:
 |------|-------|-------------|
 | 🔄 | **GitClone/Pull+Compilar** | Clona el código fuente y compila el servidor *(tarda 20-40 min)* |
 | 1️⃣ | **Limpiar Base de Datos** | Elimina las DBs anteriores |
-| 2️⃣ | **Importar Base de Datos** | Crea las 3 bases de datos del juego desde cero |
-| 3️⃣ | **Crear Cuenta de Juego** | Crea tu cuenta de administrador |
-| 4️⃣ | **Iniciar AuthServer** | Arranca el servidor de autenticación |
-| 5️⃣ | **Iniciar WorldServer** | Arranca el servidor del mundo |
+| 2️⃣ | **Importar Base de Datos** | Crea las 3 bases de datos vacías |
+| 3️⃣ | **Iniciar AuthServer** | Importa las tablas de auth al primer inicio |
+| 4️⃣ | **Iniciar WorldServer** | Importa las tablas del mundo al primer inicio |
+| 5️⃣ | **Crear Cuenta de Juego** | Crea tu cuenta de administrador |
 
 ---
 

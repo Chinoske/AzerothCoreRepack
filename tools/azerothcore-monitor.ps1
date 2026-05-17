@@ -526,9 +526,9 @@ $btnDbImport.Font      = New-Object System.Drawing.Font("Segoe UI", 9)
 $btnDbImport.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $form.Controls.Add($btnDbImport)
 
-# Botón 3 — Crear Cuenta de Juego
+# Botón 5 — Crear Cuenta de Juego
 $btnAccount = New-Object System.Windows.Forms.Button
-$btnAccount.Text      = "3  Crear Cuenta de Juego"
+$btnAccount.Text      = "5  Crear Cuenta de Juego"
 $btnAccount.Size      = New-Object System.Drawing.Size(368, 28)
 $btnAccount.Location  = New-Object System.Drawing.Point(16, 464)
 $btnAccount.FlatStyle = "Flat"
@@ -540,9 +540,9 @@ $btnAccount.Font      = New-Object System.Drawing.Font("Segoe UI", 9)
 $btnAccount.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $form.Controls.Add($btnAccount)
 
-# Nota pasos 4 y 5
+# Nota pasos 3 y 4
 $lblSteps45 = New-Object System.Windows.Forms.Label
-$lblSteps45.Text      = "4  Iniciar AuthServer     5  Iniciar WorldServer"
+$lblSteps45.Text      = "3  Iniciar AuthServer     4  Iniciar WorldServer"
 $lblSteps45.Size      = New-Object System.Drawing.Size(368, 16)
 $lblSteps45.Location  = New-Object System.Drawing.Point(16, 496)
 $lblSteps45.Font      = New-Object System.Drawing.Font("Segoe UI", 7, [System.Drawing.FontStyle]::Bold)
@@ -1743,13 +1743,13 @@ $flushTimer.Add_Tick({
         if ($success) {
             Write-TerminalLine $rtbDbImport "Base de datos importada correctamente." $tag
             Write-TerminalLine $rtbDbImport "─────────────────────────────────────────────" $tag
-            Write-TerminalLine $rtbDbImport "Siguiente paso:" $tag
-            Write-TerminalLine $rtbDbImport "  3  Crear tu cuenta con el boton 'Crear Cuenta de Juego'" $tag
-            Write-TerminalLine $rtbDbImport "  4  Iniciar AuthServer" $tag
-            Write-TerminalLine $rtbDbImport "  5  Iniciar WorldServer" $tag
+            Write-TerminalLine $rtbDbImport "Siguientes pasos:" $tag
+            Write-TerminalLine $rtbDbImport "  3  Iniciar AuthServer  (importa las tablas al primer inicio)" $tag
+            Write-TerminalLine $rtbDbImport "  4  Iniciar WorldServer (importa las tablas al primer inicio)" $tag
+            Write-TerminalLine $rtbDbImport "  5  Crear Cuenta de Juego" $tag
             Write-TerminalLine $rtbDbImport "─────────────────────────────────────────────" $tag
             [System.Windows.Forms.MessageBox]::Show(
-                "Base de datos importada correctamente.`n`nSiguientes pasos:`n`n  3  Crear tu cuenta  (boton 'Crear Cuenta de Juego')`n  4  Iniciar AuthServer`n  5  Iniciar WorldServer",
+                "3 bases de datos creadas correctamente.`n`nSiguientes pasos:`n`n  3  Iniciar AuthServer  (importa las tablas al primer inicio)`n  4  Iniciar WorldServer (importa las tablas al primer inicio)`n  5  Crear Cuenta de Juego",
                 "DB Import — Completado", "OK", "Information") | Out-Null
         } else {
             Write-TerminalLine $rtbDbImport "DB Import termino con errores (codigo $ec)." "DB!"
