@@ -51,7 +51,7 @@ Sigue los pasos numerados dentro del Monitor:
 
 | Paso | Botón | Descripción |
 |------|-------|-------------|
-| 🔄 | **Actualizar** | Clona el código fuente y compila el servidor *(tarda 20-40 min)* |
+| 🔄 | **GitClone/Pull+Compilar** | Clona el código fuente y compila el servidor *(tarda 20-40 min)* |
 | 1️⃣ | **Limpiar Base de Datos** | Elimina las DBs anteriores |
 | 2️⃣ | **Importar Base de Datos** | Crea las 3 bases de datos del juego desde cero |
 | 3️⃣ | **Crear Cuenta de Juego** | Crea tu cuenta de administrador |
