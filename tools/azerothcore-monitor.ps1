@@ -1646,7 +1646,7 @@ $timer.Interval = 4000
 $timer.Add_Tick({ Update-All })
 $timer.Start()
 
-# Helper: lanza dbimport.exe redirigiendo salida a dbimport.log (tail en flushTimer)
+# Helper: lanza dbimport.exe directamente con lectura asincrona de stdout/stderr
 function Start-DbImportJob {
     $dbimport = "$($cfg.ACoreBin)\dbimport.exe"
     $dbCfg    = "$($cfg.ACoreBin)\configs\dbimport.conf"
@@ -1666,27 +1666,40 @@ function Start-DbImportJob {
     $rtbDbImport.Clear()
     Write-TerminalLine $rtbDbImport "Ejecutando dbimport..." "DB"
 
-    $logsDir = "$($cfg.ACoreBin)\logs"
-    if (-not (Test-Path $logsDir)) { New-Item -ItemType Directory -Path $logsDir -Force | Out-Null }
-    $dbLog = "$logsDir\dbimport.log"
-    "" | Out-File -FilePath $dbLog -Encoding UTF8
-    $script:dbimportLogPos = 0L
+    # Vaciar cola de ejecuciones anteriores
+    $dummy = $null
+    while ($script:dbimportQueue.TryDequeue([ref]$dummy)) {}
 
-    $dbEsc  = $dbimport -replace "'", "''"
-    $cfgEsc = $dbCfg    -replace "'", "''"
-    $logEsc = $dbLog    -replace "'", "''"
-    $psCmd  = "`$ErrorActionPreference='SilentlyContinue'; & '$dbEsc' --config '$cfgEsc' 2>&1 | Out-File -FilePath '$logEsc' -Encoding UTF8 -Append"
     $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName               = "powershell.exe"
-    $psi.Arguments              = "-ExecutionPolicy Bypass -Command `"$psCmd`""
+    $psi.FileName               = $dbimport
+    $psi.Arguments              = "--config `"$dbCfg`""
+    $psi.WorkingDirectory       = $cfg.ACoreBin
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError  = $true
     $psi.RedirectStandardInput  = $true
     $psi.UseShellExecute        = $false
     $psi.CreateNoWindow         = $true
-    $p = New-Object System.Diagnostics.Process; $p.StartInfo = $psi
+
+    $p = New-Object System.Diagnostics.Process
+    $p.StartInfo = $psi
+
+    # Lectura asincrona — los callbacks corren en ThreadPool, encolan en ConcurrentQueue
+    $p.add_OutputDataReceived({
+        param($s, $e)
+        if ($null -ne $e.Data -and $e.Data.Trim() -ne '') { $script:dbimportQueue.Enqueue($e.Data) }
+    })
+    $p.add_ErrorDataReceived({
+        param($s, $e)
+        if ($null -ne $e.Data -and $e.Data.Trim() -ne '') { $script:dbimportQueue.Enqueue($e.Data) }
+    })
+
     $p.Start() | Out-Null
-    $p.StandardInput.AutoFlush  = $true
-    # Pre-responder cualquier prompt de confirmacion con 'yes'
-    for ($i = 0; $i -lt 30; $i++) { $p.StandardInput.WriteLine("yes") }
+    $p.BeginOutputReadLine()
+    $p.BeginErrorReadLine()
+    $p.StandardInput.AutoFlush = $true
+    # Pre-responder prompts de confirmacion (3 bases de datos)
+    for ($i = 0; $i -lt 5; $i++) { $p.StandardInput.WriteLine("yes") }
+
     $script:dbimportProc = $p
 }
 
@@ -1726,18 +1739,17 @@ $flushTimer.Add_Tick({
         Write-TerminalLine $rtbCompile $msg $tag
         $script:compileProc = $null
     }
-    $dbLog = "$($cfg.ACoreBin)\logs\dbimport.log"
-    Read-LogFile $dbLog $script:dbimportQueue ([ref]$script:dbimportLogPos)
     $n = 0
     while ($n -lt 50 -and $script:dbimportQueue.TryDequeue([ref]$line)) {
         Write-TerminalLine $rtbDbImport (Strip-Ansi $line) "DB"; $n++
     }
-    if ($script:dbimportProc -and $script:dbimportProc.HasExited) {
-        $ec  = $script:dbimportProc.ExitCode
-        # Codigo 1 es falso positivo: PowerShell NativeCommandError del intento
-        # de conexion inicial antes de crear la base. El import fue exitoso igual.
-        $success = ($ec -eq 0 -or $ec -eq 1)
-        $tag = if ($success) { "DB" } else { "DB!" }
+    if ($script:dbimportProc -and $script:dbimportProc.HasExited -and $script:dbimportQueue.IsEmpty) {
+        $ec      = $script:dbimportProc.ExitCode
+        $success = ($ec -eq 0)
+        $tag     = if ($success) { "DB" } else { "DB!" }
+        # Nulificar ANTES del MessageBox: evita que el timer re-entre mientras
+        # el dialogo esta abierto (MessageBox procesa mensajes de Windows internamente)
+        $script:dbimportProc = $null
         if ($success) {
             Write-TerminalLine $rtbDbImport "Base de datos importada correctamente." $tag
             Write-TerminalLine $rtbDbImport "─────────────────────────────────────────────" $tag
@@ -1752,7 +1764,6 @@ $flushTimer.Add_Tick({
         } else {
             Write-TerminalLine $rtbDbImport "DB Import termino con errores (codigo $ec)." "DB!"
         }
-        $script:dbimportProc = $null
     }
 })
 $flushTimer.Start()
