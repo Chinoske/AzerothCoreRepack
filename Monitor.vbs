@@ -14,6 +14,7 @@ lnk.Save
 ' Actualizar icono de la carpeta raiz
 Dim iniPath : iniPath = root & "\desktop.ini"
 Dim ico     : ico     = root & "\tools\monitor.ico"
+sh.Run "cmd /c attrib -h -s -r """ & iniPath & """", 0, True
 Dim f       : Set f   = fso.CreateTextFile(iniPath, True, False)
 f.WriteLine "[.ShellClassInfo]"
 f.WriteLine "IconResource=" & ico & ",0"
