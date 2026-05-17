@@ -79,6 +79,19 @@ Una vez configurado, solo necesitas:
 
 ---
 
+## 🔄 Mantener el servidor actualizado
+
+Este repack está conectado directamente al repositorio oficial de AzerothCore. Cada vez que el equipo de AzerothCore lanza correcciones, mejoras o nuevo contenido, puedes actualizar tu servidor con un solo clic:
+
+1. 🖱️ Abre el Monitor (`Monitor.lnk`)
+2. 🔄 Presiona **GitClone/Pull+Compilar**
+
+El Monitor descargará automáticamente los últimos cambios del [repositorio oficial de AzerothCore](https://github.com/azerothcore/azerothcore-wotlk) y recompilará el servidor con ellos. Los nuevos binarios quedan listos en `server/` y puedes iniciar el servidor normalmente.
+
+> 💡 **No necesitas hacer nada más.** Reiniciar los servidores después de compilar aplica todos los cambios de base de datos automáticamente.
+
+---
+
 ## 🗺️ Extractores de mapas
 
 El servidor necesita los archivos de mapas de tu cliente WoW. En `tools/` encontrarás el script:
