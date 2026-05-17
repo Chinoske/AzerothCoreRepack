@@ -1677,7 +1677,9 @@ function Start-DbImportJob {
     # cmd.exe solo sale cuando dbimport termina, por lo que HasExited es exacto.
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName               = "cmd.exe"
-    $psi.Arguments              = "/c `"$dbimport`" --config `"$dbCfg`" 1>`"$dbLog`" 2>&1"
+    # No citar $dbimport: si el comando empieza con '"', cmd /c aplica
+    # "old behavior" y elimina la primera y ultima '"' corrompiendo el path del log.
+    $psi.Arguments              = "/c $dbimport --config `"$dbCfg`" 1>`"$dbLog`" 2>&1"
     $psi.RedirectStandardInput  = $true
     $psi.UseShellExecute        = $false
     $psi.CreateNoWindow         = $true
