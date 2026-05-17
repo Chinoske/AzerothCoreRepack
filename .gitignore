@@ -1,0 +1,20 @@
+# Logs, PID y crash dumps (se generan en runtime)
+*.log
+*.pid
+*.bak
+*.dmp
+server/Crashes/
+
+# MySQL - archivos volátiles que cambian en cada arranque
+mysql/data/binlog.*
+mysql/data/ibtmp1
+mysql/data/ib_buffer_pool
+mysql/data/[#]*
+mysql/data/[#]innodb_redo/
+mysql/data/[#]innodb_temp/
+
+# Source y build - los llena update.ps1, no van en el repo
+source/*
+!source/.gitkeep
+build/*
+!build/.gitkeep

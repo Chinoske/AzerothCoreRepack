@@ -1,0 +1,9 @@
+# Herramientas portables - Git LFS (archivos grandes binarios)
+mysql/**  filter=lfs diff=lfs merge=lfs -text
+boost/**  filter=lfs diff=lfs merge=lfs -text
+git/**    filter=lfs diff=lfs merge=lfs -text
+cmake/**  filter=lfs diff=lfs merge=lfs -text
+
+# Binarios del servidor
+server/*.exe filter=lfs diff=lfs merge=lfs -text
+server/*.dll filter=lfs diff=lfs merge=lfs -text
