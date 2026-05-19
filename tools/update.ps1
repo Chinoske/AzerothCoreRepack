@@ -116,8 +116,8 @@ if (Test-Path "$mysqlConn\lib\libmysql.lib") { Write-OK "MySQL Connector: $mysql
 $skipGit = $env:SKIP_GIT -eq "1"
 
 # Guardar commits anteriores para el resumen final
-$prevCommitAC  = if (Test-Path "$SRC\.git")             { & $git -C $SRC    rev-parse HEAD 2>$null } else { $null }
-$prevCommitALE = if (Test-Path "$SRC\modules\mod-ale\.git") { & $git -C "$SRC\modules\mod-ale" rev-parse HEAD 2>$null } else { $null }
+$prevCommitAC  = if (Test-Path "$SRC\.git")                  { & $git -C $SRC rev-parse HEAD 2>&1 | Where-Object { $_ -notmatch '^$' } | Select-Object -First 1 } else { $null }
+$prevCommitALE = if (Test-Path "$SRC\modules\mod-ale\.git") { & $git -C "$SRC\modules\mod-ale" rev-parse HEAD 2>&1 | Where-Object { $_ -notmatch '^$' } | Select-Object -First 1 } else { $null }
 
 if ($skipGit) {
     Write-H "Codigo fuente (omitido - solo compilar)"
@@ -128,16 +128,16 @@ if ($skipGit) {
     if (-not (Test-Path "$SRC\.git") -or -not (Test-Path "$SRC\CMakeLists.txt")) {
         Write-Info "Clonando AzerothCore (puede tardar 5-15 minutos)..."
         if (Test-Path $SRC) { Remove-Item $SRC -Recurse -Force }
-        & $git clone $REPO $SRC --depth=1
+        & $git clone $REPO $SRC --depth=1 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { Write-Fail "Error clonando repositorio"; Read-Host; exit 1 }
         Write-OK "AzerothCore clonado"
     } else {
         Write-Info "Actualizando AzerothCore..."
         Push-Location $SRC
-        & $git stash | Out-Null
-        & $git pull --rebase
+        & $git stash 2>&1 | Out-Null
+        & $git pull --rebase 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { Write-Warn "git pull tuvo conflictos, continuando..." }
-        & $git stash pop | Out-Null
+        & $git stash pop 2>&1 | Out-Null
         Pop-Location
         Write-OK "AzerothCore actualizado"
     }
@@ -146,15 +146,15 @@ if ($skipGit) {
     if (-not (Test-Path "$modAle\.git")) {
         Write-Info "Clonando mod-ale..."
         if (-not (Test-Path "$SRC\modules")) { New-Item -ItemType Directory "$SRC\modules" -Force | Out-Null }
-        & $git clone $MODREPO $modAle --depth=1
+        & $git clone $MODREPO $modAle --depth=1 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { Write-Warn "No se pudo clonar mod-ale, continuando sin el." }
         else { Write-OK "mod-ale clonado" }
     } else {
         Write-Info "Actualizando mod-ale..."
         Push-Location $modAle
-        & $git stash | Out-Null
-        & $git pull --rebase
-        & $git stash pop | Out-Null
+        & $git stash 2>&1 | Out-Null
+        & $git pull --rebase 2>&1 | ForEach-Object { "$_" }
+        & $git stash pop 2>&1 | Out-Null
         Pop-Location
         Write-OK "mod-ale actualizado"
     }
