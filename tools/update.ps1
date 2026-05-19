@@ -307,12 +307,19 @@ function Find-DllFile {
 # Buscar y copiar cada DLL
 foreach ($dllName in $requiredDlls) {
     $foundPath = Find-DllFile -fileName $dllName -searchPathsList $searchPaths
-    
+    $destPath  = "$SERVER\$dllName"
+
     if ($foundPath) {
-        Copy-Item $foundPath "$SERVER\$dllName" -Force
-        Write-OK "$dllName copiada desde $foundPath"
+        $srcResolved  = (Resolve-Path $foundPath -ErrorAction SilentlyContinue)?.Path
+        $dstResolved  = (Resolve-Path $destPath  -ErrorAction SilentlyContinue)?.Path
+        if ($srcResolved -and $dstResolved -and ($srcResolved -eq $dstResolved)) {
+            Write-OK "$dllName ya esta en $SERVER"
+        } else {
+            Copy-Item $foundPath $destPath -Force
+            Write-OK "$dllName copiada desde $foundPath"
+        }
     } else {
-        Write-Warn "No se encontró $dllName. Colócala manualmente en $SERVER"
+        Write-Warn "No se encontro $dllName. Colócala manualmente en $SERVER"
     }
 }
 
