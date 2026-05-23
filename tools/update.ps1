@@ -136,36 +136,15 @@ if ($skipGit) {
         Write-OK "AzerothCore clonado"
     } else {
         # ── PULL ─────────────────────────────────────────────────────────────
-        # Usamos fetch + reset --hard en lugar de pull --rebase para que funcione
-        # correctamente con shallow clones (--depth=1) sin conflictos de stash.
         Write-Info "Actualizando AzerothCore..."
 
-        # Detectar branch actual (puede ser "master" o "main")
-        $branch = (& $git -C $SRC rev-parse --abbrev-ref HEAD 2>&1) -join "" | ForEach-Object { $_.Trim() }
-        if (-not $branch -or $branch -eq "HEAD" -or $branch -match "^fatal") { $branch = "master" }
-        Write-Info "Branch: $branch"
-
-        # ¿Es shallow clone? → mantener --depth=1 en el fetch
-        $isShallow = Test-Path "$SRC\.git\shallow"
-        $fetchDepth = if ($isShallow) { @("--depth=1") } else { @() }
-
-        Write-Info "Descargando cambios (fetch)..."
-        & $git -C $SRC fetch @fetchDepth origin $branch 2>&1 | ForEach-Object { "$_" }
+        & $git -C $SRC pull 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) {
-            Write-Warn "git fetch fallo (codigo $LASTEXITCODE) — verifica la conexion a internet"
+            Write-Warn "git pull fallo (codigo $LASTEXITCODE) — verifica la conexion a internet"
         } else {
-            # Reset duro al tip del remote: descarta cualquier cambio local en source/
-            # (el source es codigo compilable, no debe modificarse manualmente)
-            & $git -C $SRC reset --hard "origin/$branch" 2>&1 | ForEach-Object { "$_" }
-            if ($LASTEXITCODE -ne 0) {
-                Write-Warn "reset origin/$branch fallo, intentando con FETCH_HEAD..."
-                & $git -C $SRC reset --hard FETCH_HEAD 2>&1 | ForEach-Object { "$_" }
-            }
-
             # Actualizar submodulos tras el pull
             Write-Info "Actualizando submodulos..."
-            $subDepth = if ($isShallow) { @("--depth=1") } else { @() }
-            & $git -C $SRC submodule update --init --recursive @subDepth 2>&1 | ForEach-Object { "$_" }
+            & $git -C $SRC submodule update --init --recursive 2>&1 | ForEach-Object { "$_" }
         }
 
         Write-OK "AzerothCore actualizado"
@@ -182,18 +161,9 @@ if ($skipGit) {
     } else {
         # ── PULL mod-ale ──────────────────────────────────────────────────────
         Write-Info "Actualizando mod-ale..."
-        $aleBranch = (& $git -C $modAle rev-parse --abbrev-ref HEAD 2>&1) -join "" | ForEach-Object { $_.Trim() }
-        if (-not $aleBranch -or $aleBranch -eq "HEAD" -or $aleBranch -match "^fatal") { $aleBranch = "master" }
-        $aleShallow = Test-Path "$modAle\.git\shallow"
-        $aleDepth   = if ($aleShallow) { @("--depth=1") } else { @() }
-        & $git -C $modAle fetch @aleDepth origin $aleBranch 2>&1 | ForEach-Object { "$_" }
-        if ($LASTEXITCODE -eq 0) {
-            & $git -C $modAle reset --hard "origin/$aleBranch" 2>&1 | ForEach-Object { "$_" }
-            if ($LASTEXITCODE -ne 0) {
-                & $git -C $modAle reset --hard FETCH_HEAD 2>&1 | ForEach-Object { "$_" }
-            }
-        } else {
-            Write-Warn "git fetch mod-ale fallo (codigo $LASTEXITCODE)"
+        & $git -C $modAle pull 2>&1 | ForEach-Object { "$_" }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warn "git pull mod-ale fallo (codigo $LASTEXITCODE)"
         }
         Write-OK "mod-ale actualizado"
     }

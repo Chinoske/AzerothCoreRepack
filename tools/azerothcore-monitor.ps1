@@ -1197,6 +1197,8 @@ $btnStopAll.Add_Click({
     if ($script:worldProc -and -not $script:worldProc.HasExited) { $script:worldProc.Kill() }
     Get-Process -Name "authserver","worldserver" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     $script:authProc = $null; $script:worldProc = $null
+    $rtbAuth.Clear()
+    $rtbWorld.Clear()
     Stop-MySQLPortable
     Start-Sleep -Milliseconds 800; Update-All
 })
