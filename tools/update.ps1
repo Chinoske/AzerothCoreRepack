@@ -126,36 +126,75 @@ if ($skipGit) {
     Write-H "Codigo fuente"
 
     if (-not (Test-Path "$SRC\.git") -or -not (Test-Path "$SRC\CMakeLists.txt")) {
+        # ── CLONE ────────────────────────────────────────────────────────────
         Write-Info "Clonando AzerothCore (puede tardar 5-15 minutos)..."
         if (Test-Path $SRC) { Remove-Item $SRC -Recurse -Force }
         & $git clone $REPO $SRC --depth=1 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { Write-Fail "Error clonando repositorio"; Read-Host; exit 1 }
+        Write-Info "Inicializando submodulos..."
+        & $git -C $SRC submodule update --init --recursive --depth=1 2>&1 | ForEach-Object { "$_" }
         Write-OK "AzerothCore clonado"
     } else {
+        # ── PULL ─────────────────────────────────────────────────────────────
+        # Usamos fetch + reset --hard en lugar de pull --rebase para que funcione
+        # correctamente con shallow clones (--depth=1) sin conflictos de stash.
         Write-Info "Actualizando AzerothCore..."
-        Push-Location $SRC
-        & $git stash 2>&1 | Out-Null
-        & $git pull --rebase 2>&1 | ForEach-Object { "$_" }
-        if ($LASTEXITCODE -ne 0) { Write-Warn "git pull tuvo conflictos, continuando..." }
-        & $git stash pop 2>&1 | Out-Null
-        Pop-Location
+
+        # Detectar branch actual (puede ser "master" o "main")
+        $branch = (& $git -C $SRC rev-parse --abbrev-ref HEAD 2>&1) -join "" | ForEach-Object { $_.Trim() }
+        if (-not $branch -or $branch -eq "HEAD" -or $branch -match "^fatal") { $branch = "master" }
+        Write-Info "Branch: $branch"
+
+        # ¿Es shallow clone? → mantener --depth=1 en el fetch
+        $isShallow = Test-Path "$SRC\.git\shallow"
+        $fetchDepth = if ($isShallow) { @("--depth=1") } else { @() }
+
+        Write-Info "Descargando cambios (fetch)..."
+        & $git -C $SRC fetch @fetchDepth origin $branch 2>&1 | ForEach-Object { "$_" }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warn "git fetch fallo (codigo $LASTEXITCODE) — verifica la conexion a internet"
+        } else {
+            # Reset duro al tip del remote: descarta cualquier cambio local en source/
+            # (el source es codigo compilable, no debe modificarse manualmente)
+            & $git -C $SRC reset --hard "origin/$branch" 2>&1 | ForEach-Object { "$_" }
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warn "reset origin/$branch fallo, intentando con FETCH_HEAD..."
+                & $git -C $SRC reset --hard FETCH_HEAD 2>&1 | ForEach-Object { "$_" }
+            }
+
+            # Actualizar submodulos tras el pull
+            Write-Info "Actualizando submodulos..."
+            $subDepth = if ($isShallow) { @("--depth=1") } else { @() }
+            & $git -C $SRC submodule update --init --recursive @subDepth 2>&1 | ForEach-Object { "$_" }
+        }
+
         Write-OK "AzerothCore actualizado"
     }
 
     $modAle = "$SRC\modules\mod-ale"
     if (-not (Test-Path "$modAle\.git")) {
+        # ── CLONE mod-ale ─────────────────────────────────────────────────────
         Write-Info "Clonando mod-ale..."
         if (-not (Test-Path "$SRC\modules")) { New-Item -ItemType Directory "$SRC\modules" -Force | Out-Null }
         & $git clone $MODREPO $modAle --depth=1 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { Write-Warn "No se pudo clonar mod-ale, continuando sin el." }
         else { Write-OK "mod-ale clonado" }
     } else {
+        # ── PULL mod-ale ──────────────────────────────────────────────────────
         Write-Info "Actualizando mod-ale..."
-        Push-Location $modAle
-        & $git stash 2>&1 | Out-Null
-        & $git pull --rebase 2>&1 | ForEach-Object { "$_" }
-        & $git stash pop 2>&1 | Out-Null
-        Pop-Location
+        $aleBranch = (& $git -C $modAle rev-parse --abbrev-ref HEAD 2>&1) -join "" | ForEach-Object { $_.Trim() }
+        if (-not $aleBranch -or $aleBranch -eq "HEAD" -or $aleBranch -match "^fatal") { $aleBranch = "master" }
+        $aleShallow = Test-Path "$modAle\.git\shallow"
+        $aleDepth   = if ($aleShallow) { @("--depth=1") } else { @() }
+        & $git -C $modAle fetch @aleDepth origin $aleBranch 2>&1 | ForEach-Object { "$_" }
+        if ($LASTEXITCODE -eq 0) {
+            & $git -C $modAle reset --hard "origin/$aleBranch" 2>&1 | ForEach-Object { "$_" }
+            if ($LASTEXITCODE -ne 0) {
+                & $git -C $modAle reset --hard FETCH_HEAD 2>&1 | ForEach-Object { "$_" }
+            }
+        } else {
+            Write-Warn "git fetch mod-ale fallo (codigo $LASTEXITCODE)"
+        }
         Write-OK "mod-ale actualizado"
     }
 }
@@ -310,8 +349,10 @@ foreach ($dllName in $requiredDlls) {
     $destPath  = "$SERVER\$dllName"
 
     if ($foundPath) {
-        $srcResolved  = (Resolve-Path $foundPath -ErrorAction SilentlyContinue)?.Path
-        $dstResolved  = (Resolve-Path $destPath  -ErrorAction SilentlyContinue)?.Path
+        $rp1 = Resolve-Path $foundPath -ErrorAction SilentlyContinue
+        $rp2 = Resolve-Path $destPath  -ErrorAction SilentlyContinue
+        $srcResolved = if ($rp1) { $rp1.Path } else { $null }
+        $dstResolved = if ($rp2) { $rp2.Path } else { $null }
         if ($srcResolved -and $dstResolved -and ($srcResolved -eq $dstResolved)) {
             Write-OK "$dllName ya esta en $SERVER"
         } else {
